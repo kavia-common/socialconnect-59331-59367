@@ -8,11 +8,13 @@ import { useAuthStore } from "../../store/authStore";
 export default function NavBar({ theme = "light", onToggleTheme = () => {} }) {
   /** This component renders the top navigation with logo, links and theme toggle. */
   const navigate = useNavigate();
-  const { user, token, logout } = useAuthStore((s) => ({
-    user: s.user,
-    token: s.token,
-    logout: s.logout,
-  }));
+
+  // IMPORTANT: Avoid returning a new object from Zustand selector on each render,
+  // which can cause "getSnapshot should be cached" warnings and infinite re-renders.
+  // Select each field individually so referential equality works as intended.
+  const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
+  const logout = useAuthStore((s) => s.logout);
 
   const handleLogout = async () => {
     try {

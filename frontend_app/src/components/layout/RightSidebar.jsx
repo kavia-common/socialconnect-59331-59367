@@ -6,7 +6,8 @@ import { useSocketStore } from "../../services/socket";
  */
 // PUBLIC_INTERFACE
 export default function RightSidebar() {
-  const { notifications } = useSocketStore((s) => ({ notifications: s.notifications }));
+  // Select the array directly to avoid creating a new object on each render.
+  const notifications = useSocketStore((s) => s.notifications);
 
   return (
     <aside className="sticky top-16 p-4 space-y-4">

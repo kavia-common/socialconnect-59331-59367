@@ -50,6 +50,8 @@ function App() {
   const addNotification = useSocketStore((s) => s.addNotification);
   const socketRef = useRef(null);
 
+  // Effect dependencies are stable functions from Zustand (identity-stable),
+  // and `token` which is a primitive/string. This avoids infinite loops.
   useEffect(() => {
     // When token changes, (re)create socket connection
     if (token) {
