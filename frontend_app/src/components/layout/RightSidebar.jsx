@@ -26,7 +26,14 @@ export default function RightSidebar() {
         ) : (
           <ul className="space-y-2 text-sm">
             {notifications.slice(0, 5).map((n, idx) => (
-              <li key={idx} className="px-2 py-1 rounded bg-gray-50 dark:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800">
+              <li
+                key={idx}
+                className={`px-2 py-1 rounded border ${
+                  n?.isRead
+                    ? "bg-gray-50 dark:bg-zinc-800/60 border-gray-200 dark:border-zinc-800"
+                    : "bg-blue-50/60 dark:bg-blue-900/10 border-blue-200/70 dark:border-blue-900/30"
+                }`}
+              >
                 {n?.message || n?.type || "New activity"}
               </li>
             ))}

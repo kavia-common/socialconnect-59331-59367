@@ -32,6 +32,7 @@ export const useSocketStore = create(
       addNotification: (n) =>
         set((s) => ({ notifications: [n, ...s.notifications].slice(0, 50), lastEvent: n })),
       clearNotifications: () => set({ notifications: [] }),
+      // Note: Notifications coming via socket should include isRead=false to trigger badges.
     }),
     { name: "socket-store", partialize: (s) => ({ notifications: s.notifications }) }
   )

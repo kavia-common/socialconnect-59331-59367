@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
+import { useSocketStore } from "../../services/socket";
 
 /**
  * Top navigation bar with brand, search shortcut, theme toggle and auth actions.
@@ -15,6 +16,8 @@ export default function NavBar({ theme = "light", onToggleTheme = () => {} }) {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const logout = useAuthStore((s) => s.logout);
+  const notifications = useSocketStore((s) => s.notifications);
+  const unreadCount = (notifications || []).filter((n) => !n?.isRead).length;
 
   const handleLogout = async () => {
     try {
@@ -36,6 +39,14 @@ export default function NavBar({ theme = "light", onToggleTheme = () => {} }) {
             <NavLink to="/explore" className={({isActive}) => `px-2 py-1 rounded ${isActive ? 'text-accent font-medium' : 'text-gray-600 dark:text-gray-300 hover:text-accent'}`}>Explore</NavLink>
             <NavLink to="/create" className={({isActive}) => `px-2 py-1 rounded ${isActive ? 'text-accent font-medium' : 'text-gray-600 dark:text-gray-300 hover:text-accent'}`}>Create</NavLink>
             <NavLink to="/search" className={({isActive}) => `px-2 py-1 rounded ${isActive ? 'text-accent font-medium' : 'text-gray-600 dark:text-gray-300 hover:text-accent'}`}>Search</NavLink>
+            <NavLink to="/notifications" className={({isActive}) => `relative px-2 py-1 rounded ${isActive ? 'text-accent font-medium' : 'text-gray-600 dark:text-gray-300 hover:text-accent'}`}>
+              Notifications
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-2 text-[10px] leading-none px-1.5 py-0.5 rounded-full bg-red-500 text-white">
+                  {Math.min(unreadCount, 9)}
+                </span>
+              )}
+            </NavLink>
           </nav>
         </div>
 
@@ -55,6 +66,14 @@ export default function NavBar({ theme = "light", onToggleTheme = () => {} }) {
             </div>
           ) : (
             <div className="flex items-center gap-2">
+              <Link to="/notifications" className="relative px-3 py-1.5 rounded text-sm border border-gray-300 dark:border-gray-700">
+                🔔
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 text-[10px] leading-none px-1.5 py-0.5 rounded-full bg-red-500 text-white">
+                    {Math.min(unreadCount, 9)}
+                  </span>
+                )}
+              </Link>
               <Link to={`/u/${user?.username || 'me'}`} className="px-3 py-1.5 rounded text-sm border border-gray-300 dark:border-gray-700">Profile</Link>
               <button onClick={handleLogout} className="px-3 py-1.5 rounded text-sm border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">Logout</button>
             </div>

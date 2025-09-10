@@ -20,6 +20,7 @@ import Profile from './pages/Profile';
 import PostDetails from './pages/PostDetails';
 import Search from './pages/Search';
 import Onboarding from './pages/auth/Onboarding';
+import Notifications from './pages/Notifications';
 
 // Lazy-load CreatePost to keep initial bundle smaller
 const CreatePostLazy = React.lazy(() => import('./pages/CreatePost'));
@@ -149,6 +150,7 @@ function AnimatedRoutes() {
               <Route path="/p/:postId" element={<PostDetails />} />
               <Route path="/u/:username" element={<Profile />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/notifications" element={<Notifications />} />
             </Route>
 
             {/* Fallback */}
