@@ -1,64 +1,110 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import './App.css';
+import { useAuthStore } from './store/authStore';
+
+// Layout components
+import NavBar from './components/layout/NavBar';
+import SideNav from './components/layout/SideNav';
+import BottomNav from './components/layout/BottomNav';
+import RightSidebar from './components/layout/RightSidebar';
+
+// Pages
+import Login from './pages/auth/Login';
+import Signup from './pages/auth/Signup';
+import Feed from './pages/Feed';
+import Explore from './pages/Explore';
+import Profile from './pages/Profile';
+import PostDetails from './pages/PostDetails';
+import Search from './pages/Search';
 
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
+  // Prefer system theme on first load
+  const prefersDark = useMemo(
+    () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
+    []
+  );
+  const [theme, setTheme] = useState(prefersDark ? 'dark' : 'light');
 
-  // Effect to apply theme to document element
+  // Apply theme to root element
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    // add Tailwind dark class toggle for utilities support
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [theme]);
 
   // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
+    <div className="min-h-screen bg-white text-gray-900 dark:bg-zinc-900 dark:text-white transition-colors">
+      <BrowserRouter>
+        {/* Global top nav */}
+        <NavBar theme={theme} onToggleTheme={toggleTheme} />
 
-        <div className="flex flex-col items-center justify-center gap-4 p-6 rounded-xl border border-gray-200/50 dark:border-gray-700/60 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            SocialConnect
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            TailwindCSS and essentials are set up. Edit <code className="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">src/App.js</code> to get started.
-          </p>
-          <div className="flex gap-2">
-            <a
-              href="https://tailwindcss.com/docs/guides/create-react-app"
-              target="_blank"
-              rel="noreferrer"
-              className="px-3 py-2 rounded bg-accent text-white hover:opacity-90"
-            >
-              Tailwind Docs
-            </a>
-            <a
-              href="https://reactjs.org"
-              target="_blank"
-              rel="noreferrer"
-              className="px-3 py-2 rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200"
-            >
-              React Docs
-            </a>
+        {/* Main responsive layout: side nav + content + right sidebar */}
+        <div className="mx-auto max-w-7xl px-0 md:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-0 md:gap-6">
+            <aside className="hidden md:block md:col-span-2 lg:col-span-2">
+              <SideNav />
+            </aside>
+
+            <main className="col-span-1 md:col-span-7 lg:col-span-7 min-h-[calc(100vh-64px)]">
+              <Routes>
+                {/* Public routes */}
+                <Route element={<PublicOnlyRoute />}>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                </Route>
+
+                {/* Protected routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/" element={<Feed />} />
+                  <Route path="/explore" element={<Explore />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/p/:postId" element={<PostDetails />} />
+                  <Route path="/u/:username" element={<Profile />} />
+                </Route>
+
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
+
+            <aside className="hidden lg:block md:col-span-3 lg:col-span-3">
+              <RightSidebar />
+            </aside>
           </div>
         </div>
 
-        <p className="mt-6">
-          Current theme: <strong>{theme}</strong>
-        </p>
-      </header>
+        {/* Mobile bottom nav */}
+        <div className="md:hidden">
+          <BottomNav />
+        </div>
+      </BrowserRouter>
     </div>
   );
+}
+
+// PUBLIC_INTERFACE
+function ProtectedRoute() {
+  /** Route guard for authenticated-only routes */
+  const token = useAuthStore((s) => s.token);
+  if (!token) return <Navigate to="/login" replace />;
+  return <Outlet />;
+}
+
+// PUBLIC_INTERFACE
+function PublicOnlyRoute() {
+  /** Route guard that prevents authenticated users from viewing public-only pages like login/signup */
+  const token = useAuthStore((s) => s.token);
+  if (token) return <Navigate to="/" replace />;
+  return <Outlet />;
 }
 
 export default App;
