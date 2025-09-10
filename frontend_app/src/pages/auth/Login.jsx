@@ -10,11 +10,9 @@ import FormField from "./components/FormField";
 // PUBLIC_INTERFACE
 export default function Login() {
   const navigate = useNavigate();
-  const { login, loading, error } = useAuthStore((s) => ({
-    login: s.login,
-    loading: s.loading,
-    error: s.error,
-  }));
+  const login = useAuthStore((s) => s.login);
+  const loading = useAuthStore((s) => s.loading);
+  const error = useAuthStore((s) => s.error);
 
   const [form, setForm] = useState({ identifier: "", password: "" });
   const [touched, setTouched] = useState({ identifier: false, password: false });

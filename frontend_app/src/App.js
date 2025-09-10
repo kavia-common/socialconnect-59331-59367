@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import './App.css';
 import { useAuthStore } from './store/authStore';
@@ -86,79 +86,103 @@ function App() {
     }
   }, [token, setConnected, addNotification]);
 
+  // Build a Router with future flags to remove warnings and prep for v7
+  const router = useMemo(() => {
+    // We still use in-component elements; RouterProvider will render our layout below
+    return createBrowserRouter(
+      [
+        {
+          path: "/",
+          element: (
+            <AppLayout theme={theme} onToggleTheme={toggleTheme} />
+          ),
+          children: [
+            // Public routes
+            {
+              element: <PublicOnlyRouteInternal />,
+              children: [
+                { path: "login", element: <Login /> },
+                { path: "signup", element: <Signup /> },
+              ],
+            },
+            // Protected routes
+            {
+              element: <ProtectedRouteInternal />,
+              children: [
+                { index: true, element: <Feed /> },
+                { path: "explore", element: <Explore /> },
+                { path: "create", element: <CreatePostLazy /> },
+                { path: "search", element: <Search /> },
+                { path: "p/:postId", element: <PostDetails /> },
+                { path: "u/:username", element: <Profile /> },
+                { path: "onboarding", element: <Onboarding /> },
+                { path: "notifications", element: <Notifications /> },
+              ],
+            },
+            // Fallback
+            { path: "*", element: <Navigate to="/" replace /> },
+          ],
+        },
+      ],
+      {
+        future: {
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        },
+      }
+    );
+  }, [theme, toggleTheme]);
+
   return (
     <div className="min-h-screen bg-white text-gray-900 dark:bg-zinc-900 dark:text-white transition-colors">
-      <BrowserRouter>
-        {/* Global top nav */}
-        <NavBar theme={theme} onToggleTheme={toggleTheme} />
-
-        {/* Connected indicator (top small bar) */}
-        <SocketStatusBar />
-
-        {/* Main responsive layout: side nav + content + right sidebar */}
-        <div className="mx-auto max-w-7xl px-0 md:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-0 md:gap-6">
-            <aside className="hidden md:block md:col-span-2 lg:col-span-2">
-              <SideNav />
-            </aside>
-
-            <main className="col-span-1 md:col-span-7 lg:col-span-7 min-h-[calc(100vh-64px)]">
-              <AnimatedRoutes />
-            </main>
-
-            <aside className="hidden lg:block md:col-span-3 lg:col-span-3">
-              <RightSidebar />
-            </aside>
-          </div>
-        </div>
-
-        {/* Mobile bottom nav */}
-        <div className="md:hidden">
-          <BottomNav />
-        </div>
-      </BrowserRouter>
+      <RouterProvider router={router} />
     </div>
   );
 }
 
-function AnimatedRoutes() {
+function AppLayout({ theme, onToggleTheme }) {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.15, ease: 'easeOut' }}
-        className="h-full"
-      >
-        <React.Suspense fallback={<div className="p-4 text-sm text-gray-600 dark:text-gray-400">Loading...</div>}>
-          <Routes location={location}>
-            {/* Public routes */}
-            <Route element={<PublicOnlyRouteInternal />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-            </Route>
+    <>
+      {/* Global top nav */}
+      <NavBar theme={theme} onToggleTheme={onToggleTheme} />
+      {/* Connected indicator (top small bar) */}
+      <SocketStatusBar />
+      {/* Main responsive layout: side nav + content + right sidebar */}
+      <div className="mx-auto max-w-7xl px-0 md:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-0 md:gap-6">
+          <aside className="hidden md:block md:col-span-2 lg:col-span-2">
+            <SideNav />
+          </aside>
 
-            {/* Protected routes */}
-            <Route element={<ProtectedRouteInternal />}>
-              <Route path="/" element={<Feed />} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/create" element={<CreatePostLazy />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/p/:postId" element={<PostDetails />} />
-              <Route path="/u/:username" element={<Profile />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/notifications" element={<Notifications />} />
-            </Route>
+          <main className="col-span-1 md:col-span-7 lg:col-span-7 min-h-[calc(100vh-64px)]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="h-full"
+              >
+                <React.Suspense fallback={<div className="p-4 text-sm text-gray-600 dark:text-gray-400">Loading...</div>}>
+                  <Outlet />
+                </React.Suspense>
+              </motion.div>
+            </AnimatePresence>
+          </main>
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </React.Suspense>
-      </motion.div>
-    </AnimatePresence>
+          <aside className="hidden lg:block md:col-span-3 lg:col-span-3">
+            <RightSidebar />
+          </aside>
+        </div>
+      </div>
+
+      {/* Mobile bottom nav */}
+      <div className="md:hidden">
+        <BottomNav />
+      </div>
+    </>
   );
 }
 
