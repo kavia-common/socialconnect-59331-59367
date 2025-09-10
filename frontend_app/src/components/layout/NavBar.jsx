@@ -34,6 +34,7 @@ export default function NavBar({ theme = "light", onToggleTheme = () => {} }) {
           <nav className="hidden md:flex items-center gap-3 text-sm">
             <NavLink to="/" end className={({isActive}) => `px-2 py-1 rounded ${isActive ? 'text-accent font-medium' : 'text-gray-600 dark:text-gray-300 hover:text-accent'}`}>Feed</NavLink>
             <NavLink to="/explore" className={({isActive}) => `px-2 py-1 rounded ${isActive ? 'text-accent font-medium' : 'text-gray-600 dark:text-gray-300 hover:text-accent'}`}>Explore</NavLink>
+            <NavLink to="/create" className={({isActive}) => `px-2 py-1 rounded ${isActive ? 'text-accent font-medium' : 'text-gray-600 dark:text-gray-300 hover:text-accent'}`}>Create</NavLink>
             <NavLink to="/search" className={({isActive}) => `px-2 py-1 rounded ${isActive ? 'text-accent font-medium' : 'text-gray-600 dark:text-gray-300 hover:text-accent'}`}>Search</NavLink>
           </nav>
         </div>

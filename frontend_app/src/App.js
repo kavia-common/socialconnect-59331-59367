@@ -21,6 +21,9 @@ import PostDetails from './pages/PostDetails';
 import Search from './pages/Search';
 import Onboarding from './pages/auth/Onboarding';
 
+// Lazy-load CreatePost to keep initial bundle smaller
+const CreatePostLazy = React.lazy(() => import('./pages/CreatePost'));
+
 // PUBLIC_INTERFACE
 function App() {
   // Prefer system theme on first load
@@ -129,26 +132,29 @@ function AnimatedRoutes() {
         transition={{ duration: 0.15, ease: 'easeOut' }}
         className="h-full"
       >
-        <Routes location={location}>
-          {/* Public routes */}
-          <Route element={<PublicOnlyRouteInternal />}>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-          </Route>
+        <React.Suspense fallback={<div className="p-4 text-sm text-gray-600 dark:text-gray-400">Loading...</div>}>
+          <Routes location={location}>
+            {/* Public routes */}
+            <Route element={<PublicOnlyRouteInternal />}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+            </Route>
 
-          {/* Protected routes */}
-          <Route element={<ProtectedRouteInternal />}>
-            <Route path="/" element={<Feed />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/p/:postId" element={<PostDetails />} />
-            <Route path="/u/:username" element={<Profile />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-          </Route>
+            {/* Protected routes */}
+            <Route element={<ProtectedRouteInternal />}>
+              <Route path="/" element={<Feed />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/create" element={<CreatePostLazy />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/p/:postId" element={<PostDetails />} />
+              <Route path="/u/:username" element={<Profile />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+            </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </React.Suspense>
       </motion.div>
     </AnimatePresence>
   );

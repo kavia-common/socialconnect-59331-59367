@@ -10,6 +10,7 @@ export default function SideNav() {
       <SideLink to="/" label="Home" />
       <SideLink to="/explore" label="Explore" />
       <SideLink to="/search" label="Search" />
+      <SideLink to="/create" label="Create" />
     </nav>
   );
 }

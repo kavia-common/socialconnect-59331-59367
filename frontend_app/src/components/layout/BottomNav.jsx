@@ -7,9 +7,10 @@ import { NavLink } from "react-router-dom";
 export default function BottomNav() {
   return (
     <nav className="fixed bottom-0 inset-x-0 h-14 bg-white/90 dark:bg-zinc-900/90 border-t border-gray-200 dark:border-zinc-800 backdrop-blur">
-      <div className="h-full max-w-md mx-auto grid grid-cols-3">
+      <div className="h-full max-w-md mx-auto grid grid-cols-4">
         <BottomLink to="/" label="Home" />
         <BottomLink to="/explore" label="Explore" />
+        <BottomLink to="/create" label="Create" />
         <BottomLink to="/search" label="Search" />
       </div>
     </nav>
