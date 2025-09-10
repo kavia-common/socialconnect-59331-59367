@@ -32,16 +32,13 @@ export const useAuthStore = create(
       async login({ email, username, password }) {
         set({ loading: true, error: null });
         try {
-          const payload = email ? { email, password } : { username, password };
+          const payload = email ? { emailOrUsername: email, password } : { emailOrUsername: username, password };
           const res = await api.post("/auth/login", payload);
           const { token, user } = res.data || {};
           set({ token: token || null, user: user || null, loading: false });
           return { token, user };
         } catch (err) {
-          const message =
-            err?.response?.data?.message ||
-            err?.message ||
-            "Login failed. Please try again.";
+          const message = err?.normalizedMessage || err?.response?.data?.message || err?.message || "Login failed. Please try again.";
           set({ error: message, loading: false });
           throw err;
         }
@@ -55,10 +52,7 @@ export const useAuthStore = create(
           set({ loading: false });
           return res.data;
         } catch (err) {
-          const message =
-            err?.response?.data?.message ||
-            err?.message ||
-            "Signup failed. Please try again.";
+          const message = err?.normalizedMessage || err?.response?.data?.message || err?.message || "Signup failed. Please try again.";
           set({ error: message, loading: false });
           throw err;
         }

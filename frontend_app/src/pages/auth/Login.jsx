@@ -34,7 +34,7 @@ export default function Login() {
       <div className="w-full max-w-sm p-6 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
         <h1 className="text-2xl font-semibold mb-4 text-center">Log in</h1>
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 rounded p-2 mb-3">
+          <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 rounded p-2 mb-3" role="alert">
             {error}
           </p>
         )}
@@ -48,6 +48,7 @@ export default function Login() {
               value={form.identifier}
               onChange={(e) => setForm((f) => ({ ...f, identifier: e.target.value }))}
               required
+              autoComplete="username"
             />
           </div>
           <div>
@@ -59,6 +60,7 @@ export default function Login() {
               value={form.password}
               onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
               required
+              autoComplete="current-password"
             />
           </div>
           <button

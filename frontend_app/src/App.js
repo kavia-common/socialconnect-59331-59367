@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import './App.css';
 import { useAuthStore } from './store/authStore';
+import { createSocket, useSocketStore } from './services/socket';
 
 // Layout components
 import NavBar from './components/layout/NavBar';
@@ -41,11 +43,50 @@ function App() {
   // PUBLIC_INTERFACE
   const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
 
+  // Socket wiring
+  const token = useAuthStore((s) => s.token);
+  const setConnected = useSocketStore((s) => s.setConnected);
+  const addNotification = useSocketStore((s) => s.addNotification);
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    // When token changes, (re)create socket connection
+    if (token) {
+      socketRef.current = createSocket(token);
+      const socket = socketRef.current;
+
+      socket.on('connect', () => setConnected(true));
+      socket.on('disconnect', () => setConnected(false));
+      socket.on('notification', (payload) => {
+        // generic notification event from backend
+        addNotification(payload || { type: 'info', message: 'New notification' });
+      });
+
+      socket.connect();
+      return () => {
+        socket.removeAllListeners();
+        socket.disconnect();
+        setConnected(false);
+      };
+    } else {
+      // ensure any previous socket is closed
+      if (socketRef.current) {
+        socketRef.current.removeAllListeners();
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      setConnected(false);
+    }
+  }, [token, setConnected, addNotification]);
+
   return (
     <div className="min-h-screen bg-white text-gray-900 dark:bg-zinc-900 dark:text-white transition-colors">
       <BrowserRouter>
         {/* Global top nav */}
         <NavBar theme={theme} onToggleTheme={toggleTheme} />
+
+        {/* Connected indicator (top small bar) */}
+        <SocketStatusBar />
 
         {/* Main responsive layout: side nav + content + right sidebar */}
         <div className="mx-auto max-w-7xl px-0 md:px-6 lg:px-8">
@@ -55,25 +96,7 @@ function App() {
             </aside>
 
             <main className="col-span-1 md:col-span-7 lg:col-span-7 min-h-[calc(100vh-64px)]">
-              <Routes>
-                {/* Public routes */}
-                <Route element={<PublicOnlyRoute />}>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                </Route>
-
-                {/* Protected routes */}
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/" element={<Feed />} />
-                  <Route path="/explore" element={<Explore />} />
-                  <Route path="/search" element={<Search />} />
-                  <Route path="/p/:postId" element={<PostDetails />} />
-                  <Route path="/u/:username" element={<Profile />} />
-                </Route>
-
-                {/* Fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+              <AnimatedRoutes />
             </main>
 
             <aside className="hidden lg:block md:col-span-3 lg:col-span-3">
@@ -91,20 +114,65 @@ function App() {
   );
 }
 
-// PUBLIC_INTERFACE
-function ProtectedRoute() {
+function AnimatedRoutes() {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.15, ease: 'easeOut' }}
+        className="h-full"
+      >
+        <Routes location={location}>
+          {/* Public routes */}
+          <Route element={<PublicOnlyRouteInternal />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+          </Route>
+
+          {/* Protected routes */}
+          <Route element={<ProtectedRouteInternal />}>
+            <Route path="/" element={<Feed />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/p/:postId" element={<PostDetails />} />
+            <Route path="/u/:username" element={<Profile />} />
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* Internal-only route guards to avoid naming conflicts in module scope */
+function ProtectedRouteInternal() {
   /** Route guard for authenticated-only routes */
   const token = useAuthStore((s) => s.token);
   if (!token) return <Navigate to="/login" replace />;
   return <Outlet />;
 }
 
-// PUBLIC_INTERFACE
-function PublicOnlyRoute() {
+function PublicOnlyRouteInternal() {
   /** Route guard that prevents authenticated users from viewing public-only pages like login/signup */
   const token = useAuthStore((s) => s.token);
   if (token) return <Navigate to="/" replace />;
   return <Outlet />;
+}
+
+function SocketStatusBar() {
+  const connected = useSocketStore((s) => s.connected);
+  return (
+    <div
+      className={`h-1 ${connected ? 'bg-green-500' : 'bg-yellow-500'} transition-colors`}
+      aria-hidden
+    />
+  );
 }
 
 export default App;
