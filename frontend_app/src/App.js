@@ -19,6 +19,7 @@ import Explore from './pages/Explore';
 import Profile from './pages/Profile';
 import PostDetails from './pages/PostDetails';
 import Search from './pages/Search';
+import Onboarding from './pages/auth/Onboarding';
 
 // PUBLIC_INTERFACE
 function App() {
@@ -140,6 +141,7 @@ function AnimatedRoutes() {
             <Route path="/search" element={<Search />} />
             <Route path="/p/:postId" element={<PostDetails />} />
             <Route path="/u/:username" element={<Profile />} />
+            <Route path="/onboarding" element={<Onboarding />} />
           </Route>
 
           {/* Fallback */}

@@ -21,4 +21,10 @@ React app with TailwindCSS, Axios API client, Zustand auth store, Framer Motion,
 - Framer Motion page transitions – `AnimatedRoutes` in `src/App.js`
 - Socket.IO client – `src/services/socket.js`, auto-connects on login and shows a connection indicator
 
+## Auth UX enhancements
+- Login and Signup forms now include client-side validation with inline errors.
+- Signup includes a password strength indicator and username format hint (3-30 chars, letters/numbers/_).
+- Error messages returned from API are displayed in a prominent, accessible alert box.
+- Post-signup Onboarding flow (`/onboarding`) guides new users with a short welcome and optional profile fields. If the backend returns a token on signup, users are directed to onboarding; otherwise, they’re sent to login after account creation.
+
 Backend endpoints follow the provided OpenAPI; update `.env` to point to your running backend.

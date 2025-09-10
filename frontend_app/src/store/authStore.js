@@ -49,7 +49,13 @@ export const useAuthStore = create(
         set({ loading: true, error: null });
         try {
           const res = await api.post("/auth/signup", { email, username, password });
-          set({ loading: false });
+          // Some backends return token+user upon signup, others don't. Normalize:
+          const { token, user } = res.data || {};
+          if (token && user) {
+            set({ token, user, loading: false });
+          } else {
+            set({ loading: false });
+          }
           return res.data;
         } catch (err) {
           const message = err?.normalizedMessage || err?.response?.data?.message || err?.message || "Signup failed. Please try again.";
