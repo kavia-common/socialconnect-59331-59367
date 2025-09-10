@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMediaSignature, uploadMediaServer, createPost } from "../services/contentApi";
-import { useAuthStore } from "../store/authStore";
 import { useSocketStore } from "../services/socket";
+import { useAuth } from "@clerk/clerk-react";
 
 /**
  * CreatePost: UI for uploading an image or video and creating a new post.
@@ -16,15 +16,15 @@ import { useSocketStore } from "../services/socket";
 // PUBLIC_INTERFACE
 export default function CreatePost() {
   const navigate = useNavigate();
-  const token = useAuthStore((s) => s.token);
+  const { isSignedIn } = useAuth();
   const setSocketEvent = useSocketStore((s) => s.addNotification);
 
-  // Redirect if not authenticated (route guard should also handle, but double-check)
+  // Clerk route guard already protects; this is defensive.
   useEffect(() => {
-    if (!token) {
-      navigate("/login", { replace: true });
+    if (!isSignedIn) {
+      navigate("/sign-in", { replace: true });
     }
-  }, [token, navigate]);
+  }, [isSignedIn, navigate]);
 
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");

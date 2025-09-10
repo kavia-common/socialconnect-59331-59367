@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import './App.css';
-import { useAuthStore } from './store/authStore';
 import { createSocket, useSocketStore } from './services/socket';
+import { SignedIn, SignedOut, useAuth, RedirectToSignIn, SignIn, SignUp } from '@clerk/clerk-react';
 
 // Layout components
 import NavBar from './components/layout/NavBar';
@@ -11,15 +11,12 @@ import SideNav from './components/layout/SideNav';
 import BottomNav from './components/layout/BottomNav';
 import RightSidebar from './components/layout/RightSidebar';
 
-// Pages
-import Login from './pages/auth/Login';
-import Signup from './pages/auth/Signup';
+// Pages (remove custom Login/Signup/Onboarding usage)
 import Feed from './pages/Feed';
 import Explore from './pages/Explore';
 import Profile from './pages/Profile';
 import PostDetails from './pages/PostDetails';
 import Search from './pages/Search';
-import Onboarding from './pages/auth/Onboarding';
 import Notifications from './pages/Notifications';
 
 // Lazy-load CreatePost to keep initial bundle smaller
@@ -48,47 +45,46 @@ function App() {
   // PUBLIC_INTERFACE
   const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
 
-  // Socket wiring
-  const token = useAuthStore((s) => s.token);
+  // Socket wiring via Clerk session token when available
+  const { getToken } = useAuth();
   const setConnected = useSocketStore((s) => s.setConnected);
   const addNotification = useSocketStore((s) => s.addNotification);
   const socketRef = useRef(null);
 
-  // Effect dependencies are stable functions from Zustand (identity-stable),
-  // and `token` which is a primitive/string. This avoids infinite loops.
   useEffect(() => {
-    // When token changes, (re)create socket connection
-    if (token) {
-      socketRef.current = createSocket(token);
-      const socket = socketRef.current;
+    let cancelled = false;
 
-      socket.on('connect', () => setConnected(true));
-      socket.on('disconnect', () => setConnected(false));
-      socket.on('notification', (payload) => {
-        // generic notification event from backend
-        addNotification(payload || { type: 'info', message: 'New notification' });
-      });
+    (async () => {
+      // Fetch a token from Clerk if signed in (may be null when signed out)
+      const token = await getToken?.();
+      // When token changes, (re)create socket connection
+      if (!cancelled && token) {
+        socketRef.current = createSocket(token);
+        const socket = socketRef.current;
 
-      socket.connect();
-      return () => {
-        socket.removeAllListeners();
-        socket.disconnect();
-        setConnected(false);
-      };
-    } else {
-      // ensure any previous socket is closed
+        socket.on('connect', () => setConnected(true));
+        socket.on('disconnect', () => setConnected(false));
+        socket.on('notification', (payload) => {
+          addNotification(payload || { type: 'info', message: 'New notification' });
+        });
+
+        socket.connect();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
       if (socketRef.current) {
         socketRef.current.removeAllListeners();
         socketRef.current.disconnect();
         socketRef.current = null;
       }
       setConnected(false);
-    }
-  }, [token, setConnected, addNotification]);
+    };
+  }, [getToken, setConnected, addNotification]);
 
-  // Build a Router with future flags to remove warnings and prep for v7
+  // Build a Router
   const router = useMemo(() => {
-    // We still use in-component elements; RouterProvider will render our layout below
     return createBrowserRouter(
       [
         {
@@ -97,14 +93,10 @@ function App() {
             <AppLayout theme={theme} onToggleTheme={toggleTheme} />
           ),
           children: [
-            // Public routes
-            {
-              element: <PublicOnlyRouteInternal />,
-              children: [
-                { path: "login", element: <Login /> },
-                { path: "signup", element: <Signup /> },
-              ],
-            },
+            // Clerk hosted components for sign-in/sign-up
+            { path: "sign-in/*", element: <SignIn routing="path" path="/sign-in" /> },
+            { path: "sign-up/*", element: <SignUp routing="path" path="/sign-up" /> },
+
             // Protected routes
             {
               element: <ProtectedRouteInternal />,
@@ -115,7 +107,6 @@ function App() {
                 { path: "search", element: <Search /> },
                 { path: "p/:postId", element: <PostDetails /> },
                 { path: "u/:username", element: <Profile /> },
-                { path: "onboarding", element: <Onboarding /> },
                 { path: "notifications", element: <Notifications /> },
               ],
             },
@@ -186,19 +177,18 @@ function AppLayout({ theme, onToggleTheme }) {
   );
 }
 
-/* Internal-only route guards to avoid naming conflicts in module scope */
+// Clerk-based protection
 function ProtectedRouteInternal() {
-  /** Route guard for authenticated-only routes */
-  const token = useAuthStore((s) => s.token);
-  if (!token) return <Navigate to="/login" replace />;
-  return <Outlet />;
-}
-
-function PublicOnlyRouteInternal() {
-  /** Route guard that prevents authenticated users from viewing public-only pages like login/signup */
-  const token = useAuthStore((s) => s.token);
-  if (token) return <Navigate to="/" replace />;
-  return <Outlet />;
+  return (
+    <>
+      <SignedIn>
+        <Outlet />
+      </SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </>
+  );
 }
 
 function SocketStatusBar() {

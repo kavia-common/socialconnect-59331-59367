@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAuthStore } from "../store/authStore";
 import { fetchMyFeed } from "../services/contentApi";
 import PostCard from "../components/ui/PostCard";
 import MasonryGrid from "../components/ui/MasonryGrid";
@@ -11,17 +10,12 @@ import { useSocketStore } from "../services/socket";
  */
 // PUBLIC_INTERFACE
 export default function Feed() {
-  const fetchMe = useAuthStore((s) => s.fetchMe);
   const lastEvent = useSocketStore((s) => s.lastEvent);
   const [items, setItems] = useState([]);
   const [cursor, setCursor] = useState(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const sentinelRef = useRef(null);
-
-  useEffect(() => {
-    fetchMe().catch(() => {});
-  }, [fetchMe]);
 
   const load = useCallback(async () => {
     if (loading || done) return;

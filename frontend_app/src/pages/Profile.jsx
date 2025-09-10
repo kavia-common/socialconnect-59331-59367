@@ -3,14 +3,14 @@ import { useParams } from "react-router-dom";
 import { fetchPostsByUsername, fetchUserProfile, updateMyProfile } from "../services/contentApi";
 import MasonryGrid from "../components/ui/MasonryGrid";
 import PostCard from "../components/ui/PostCard";
-import { useAuthStore } from "../store/authStore";
 import { motion } from "framer-motion";
 
 // PUBLIC_INTERFACE
 export default function Profile() {
   const { username } = useParams();
-  const authUser = useAuthStore((s) => s.user);
-  const isMe = useMemo(() => authUser?.username?.toLowerCase() === String(username || "").toLowerCase(), [authUser, username]);
+  // Without custom auth store, we can't trivially know "me" username.
+  // We consider viewing /u/:username as "isMe" only if backend later indicates so.
+  const [isMe, setIsMe] = useState(false);
 
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -27,6 +27,11 @@ export default function Profile() {
     try {
       const p = await fetchUserProfile(username);
       setProfile(p);
+      // Backend PublicProfile may include isFollowing and can be same user
+      if (p?.username && String(p.username).toLowerCase() === String(username).toLowerCase()) {
+        // This only checks equality to param; a more reliable "me" flag can be added via /users/me.
+        setIsMe(!!p?.isMe || false);
+      }
     } catch {
       setProfile(null);
     } finally {
@@ -86,8 +91,7 @@ export default function Profile() {
     try {
       const updated = await updateMyProfile({ bio: edit.bio, username: edit.username });
       setProfile((p) => ({ ...(p || {}), ...updated }));
-      // Also update auth store to keep username consistent
-      useAuthStore.setState((s) => ({ ...s, user: { ...(s.user || {}), ...updated } }));
+      // Auth store removed; Clerk manages auth. If needed, refresh via backend or Clerk hooks.
     } catch {
       // silently ignore for now, could surface toast
     } finally {

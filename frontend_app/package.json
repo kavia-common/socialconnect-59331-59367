@@ -4,6 +4,7 @@
   "private": true,
   "description": "SocialConnect React frontend with TailwindCSS, Zustand, Framer Motion, and Socket.IO client.",
   "dependencies": {
+    "@clerk/clerk-react": "^5.46.2",
     "axios": "^1.11.0",
     "framer-motion": "^12.23.12",
     "react": "^18.2.0",

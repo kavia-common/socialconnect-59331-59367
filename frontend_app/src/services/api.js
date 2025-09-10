@@ -17,11 +17,14 @@ export const api = axios.create({
   },
 });
 
-// Attach token from auth store if available (lazy import to avoid circular deps)
+/**
+ * Attach token from Clerk if available.
+ * We lazy import Clerk to avoid issues during test or non-browser contexts.
+ */
 api.interceptors.request.use(async (config) => {
   try {
-    const { useAuthStore } = await import("../store/authStore");
-    const token = useAuthStore.getState().token;
+    const clerk = await import("@clerk/clerk-react");
+    const token = await clerk?.useAuth?.()?.getToken?.();
     if (token) {
       config.headers = {
         ...(config.headers || {}),
@@ -29,7 +32,7 @@ api.interceptors.request.use(async (config) => {
       };
     }
   } catch {
-    // store might not be initialized yet; ignore
+    // ignore when Clerk not ready
   }
   return config;
 });
