@@ -94,8 +94,8 @@ function App() {
           ),
           children: [
             // Clerk hosted components for sign-in/sign-up
-            { path: "sign-in/*", element: <SignIn routing="path" path="/sign-in" /> },
-            { path: "sign-up/*", element: <SignUp routing="path" path="/sign-up" /> },
+            { path: "sign-in/*", element: <SignIn routing="path" path="/sign-in" fallbackRedirectUrl="/" /> },
+            { path: "sign-up/*", element: <SignUp routing="path" path="/sign-up" fallbackRedirectUrl="/" /> },
 
             // Protected routes
             {
@@ -191,7 +191,7 @@ function ProtectedRouteInternal() {
         <Outlet />
       </SignedIn>
       <SignedOut>
-        <RedirectToSignIn />
+        <RedirectToSignIn fallbackRedirectUrl="/sign-in" />
       </SignedOut>
     </>
   );

@@ -2,6 +2,15 @@
 
 React app with TailwindCSS, Axios API client, Clerk authentication, Framer Motion, and Socket.IO client. Includes routing, Clerk route guards, light/dark mode, and core pages for Feed, Explore, and Profile with infinite scroll.
 
+Clerk notes
+- The deprecated prop redirectUrl has been removed from Clerk components. Use fallbackRedirectUrl (preferred) or forceRedirectUrl when you want to always navigate to a specific URL after the flow.
+- In development, Clerk may show a banner if using a dev publishable key. This is expected. Provide REACT_APP_CLERK_PUBLISHABLE_KEY from your Clerk project. In production, ensure you use a production publishable key to avoid dev warnings.
+- This app sets:
+  - <SignIn ... fallbackRedirectUrl="/" />
+  - <SignUp ... fallbackRedirectUrl="/" />
+  - <RedirectToSignIn fallbackRedirectUrl="/sign-in" />
+  - <UserButton afterSignOutUrl="/" /> (this uses afterSignOutUrl, not redirectUrl)
+
 ## Quick start
 
 1. Copy environment example:
